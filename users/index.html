@@ -4,14 +4,19 @@
     <meta charset="UTF-8">
     <title>Client</title>
     <link rel="stylesheet" href="../assets/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
+
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-database.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
 </head>
 <body>
 <div class="container mt-5">
-    <div class="row">
+
+    <!--for login users-->
+    <div class="row" id="row-login">
         <div class="col-sm-4 offset-4">
             <div class="card shadow">
                 <div class="card-body">
@@ -28,7 +33,60 @@
                         </div>
                         <button type="button" id="login" class="btn btn-primary">Login</button>
                         <button type="button" id="reg" class="btn btn-success">Register</button>
+                        <button type="button" id="logout" class="btn btn-danger" hidden>Logout</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- table for list message / thread-->
+    <div class="row" id="row-list" hidden>
+        <div class="col-sm-4">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-hover table-striped">
+                        <tr>
+                            <td>Email</td>
+                            <td>:</td>
+                            <td><span id="lsMail"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Thread ID</td>
+                            <td>:</td>
+                            <td><span id="lsThread"></span></td>
+                        </tr>
+                        <tr>
+                            <td>Start Time</td>
+                            <td>:</td>
+                            <td><span id="lsTime"></span></td>
+                        </tr>
+                        <tr>
+                            <td>IP Address</td>
+                            <td>:</td>
+                            <td><span id="lsIp"></span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-sm-8">
+            <div class="card">
+                <div class="card-body">
+                    <table class="table table-hover" id="tb-list">
+                        <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Message</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -39,10 +97,22 @@
 <script src="../config-firebase.js"></script>
 
 <script>
+    $.LoadingOverlay("show");
    let email = $("#email").val();
    let pwd = $("#pwd").val();
-   const swal = (opt) => Swal.fire(opt);
+   let swal = (opt) => Swal.fire(opt);
+   let rowLogin = $("#row-login");
+   let rowList = $("#row-list");
 
+    $(document).ready( function () {
+        $('#tb-list').DataTable();
+    } );
+
+   /**
+    * -----------------------------------------------------------------
+    * for login user-authentication
+    * -----------------------------------------------------------------
+    * */
    $("#login").click(function (e) {
        $.LoadingOverlay("show");
 
@@ -69,7 +139,12 @@
                $.LoadingOverlay("hide");
            })
    })
-   
+
+   /**
+    * -----------------------------------------------------------------
+    * for register user-authentication
+    * -----------------------------------------------------------------
+    * */
    $("#reg").click(function (e) {
        $.LoadingOverlay("show");
        auth.createUserWithEmailAndPassword(email, pwd)
@@ -87,6 +162,43 @@
                console.log("Reg done")
                $.LoadingOverlay("hide");
            })
+   })
+
+   /**
+    * -----------------------------------------------------------------
+    * for listen change user-authentication
+    * -----------------------------------------------------------------
+    * */
+   auth.onAuthStateChanged((user)=>{
+       if(user){
+           console.warn("login", user.uid);
+           user.providerData.forEach(function (profile) {
+               $("#lsMail").html(profile.email);
+               console.log("  Sign-in provider: " + profile.providerId);
+               console.log("  Provider-specific UID: " + profile.uid);
+               console.log("  Name: " + profile.displayName);
+               console.log("  Email: " + profile.email);
+               console.log("  Photo URL: " + profile.photoURL);
+           });
+
+           $("#reg").attr("hidden","");
+           $("#login").attr("hidden","");
+           $("#logout").removeAttr("hidden");
+           rowLogin.attr("hidden","");
+           rowList.removeAttr("hidden");
+           $.LoadingOverlay("hide");
+       }else{
+           console.warn("logout");
+
+           $("#reg").removeAttr("hidden");
+           $("login").removeAttr("hidden");
+           $("#logout").attr("hidden","");
+
+           rowList.attr("hidden","");
+           rowLogin.removeAttr("hidden");
+
+           $.LoadingOverlay("hide");
+       }
    })
 </script>
 </body>
