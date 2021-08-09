@@ -33,7 +33,6 @@
                         </div>
                         <button type="button" id="login" class="btn btn-primary">Login</button>
                         <button type="button" id="reg" class="btn btn-success">Register</button>
-                        <button type="button" id="logout" class="btn btn-danger" hidden>Logout</button>
                     </form>
                 </div>
             </div>
@@ -45,6 +44,9 @@
         <div class="col-sm-4">
             <div class="card">
                 <div class="card-body">
+
+                    <button type="button" id="logout" class="btn btn-block btn-danger" hidden>Logout</button>
+                    <hr>
                     <table class="table table-hover table-striped">
                         <tr>
                             <td>Email</td>
@@ -200,6 +202,35 @@
            $.LoadingOverlay("hide");
        }
    })
+
+    /**
+     * -----------------------------------------------------------------
+     * logout authentication
+     * -----------------------------------------------------------------
+     * */
+    $("#logout").click(function () {
+        swal({
+            title : "Warning",
+            text : "Are you sure want to logout from this app ?",
+            icon : "warning",
+            showCancelButton : true,
+        }).then(({isConfirmed})=>{
+            if(isConfirmed){
+                $.LoadingOverlay("show");
+                auth.signOut()
+                    .then(()=>{
+                        Swal.fire("success", "Logout berhasil", "success");
+                    })
+                    .catch((err)=>{
+                        console.warn(err);
+                        Swal.fire("error", "Logout gagal", "error");
+                    })
+                    .finally(()=>{
+                        $.LoadingOverlay("hide");
+                    })
+            }
+        })
+    })
 </script>
 </body>
 </html>
