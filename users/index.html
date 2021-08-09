@@ -44,10 +44,10 @@
     <div class="row" id="row-list" hidden>
         <div class="col-sm-4">
             <div class="card">
-                <div class="card-body">
-
+                <div class="card-header">
                     <button type="button" id="logout" class="btn btn-block btn-danger" hidden>Logout</button>
-                    <hr>
+                </div>
+                <div class="card-body">
                     <table class="table table-hover table-striped table-sm">
                         <tr>
                             <td>Email</td>
@@ -87,6 +87,7 @@
                             <th>Message</th>
                             <th>Time</th>
                             <th>Status</th>
+                            <th>Aktor</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -136,9 +137,6 @@
    let rowLogin = $("#row-login");
    let rowList = $("#row-list");
 
-    $(document).ready( function () {
-        $('#tb-list').DataTable();
-    } );
 
    /**
     * -----------------------------------------------------------------
@@ -280,6 +278,11 @@
         console.log("thread has been created. "+id);
     }
 
+    /**
+     * -----------------------------------------------------------------
+     * listen event firebase
+     * -----------------------------------------------------------------
+     * */
     let uid = localStorage.getItem("uid");
     if (uid !== null){
         db.ref("threads/"+uid).on("value", function (e) {
@@ -292,6 +295,28 @@
                 $("#lsThread").html(item[i].threadid);
                 $("#lsTime").html(item[i].started);
             }
+        })
+
+        db.ref("messages/"+uid).on("value", function (e) {
+            let item = e.val();
+            console.log("msg", item)
+
+            let html = "";
+            let no = 1;
+            for (var i in item){
+                html +="<tr>";
+                html += `<td>${no}</td>`
+                html += `<td>${item[i].message}</td>`
+                html += `<td>${item[i].time}</td>`
+                html += `<td>${item[i].status}</td>`
+                html += `<td>${item[i].aktor}</td>`
+                html +="</tr>";
+
+                no++;
+            }
+
+            $('#tb-list').find("tbody").html(html);
+            $('#tb-list').DataTable();
         })
     }
 
@@ -306,7 +331,8 @@
             db.ref("messages/"+uid).push({
                 message : $("[name=message]").val(),
                 time : Math.round(Date.now()/1000),
-                status : "pending"
+                status : "pending",
+                aktor: "client"
             })
             swal({
                 title : "Succcess",
