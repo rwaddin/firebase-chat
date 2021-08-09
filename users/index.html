@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Client</title>
+    <link rel="stylesheet" href="../assets/bootstrap.min.css">
+    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-auth.js"></script>
+<!--    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-analytics.js"></script>-->
+    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-database.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-sm-4 offset-4">
+            <div class="card shadow">
+                <div class="card-body">
+                    <p>Try login with : </p>
+                    <ul>
+                        <li>client@user.com | client</li>
+                    </ul>
+                    <form action="">
+                        <div class="form-group">
+                            <input type="email" class="form-control" placeholder="Enter email" id="email" value="client@user.com">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="form-control" placeholder="Enter password" id="pwd" value="client">
+                        </div>
+                        <button type="button" id="login" class="btn btn-primary">Login</button>
+                        <button type="button" id="reg" class="btn btn-success">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+<script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+<script src="../config-firebase.js"></script>
+<script>
+   let email = $("#email").val();
+   let pwd = $("#pwd").val();
+
+   $("#login").click(function (e) {
+       console.log(email, pwd)
+   })
+   
+   $("#reg").click(function (e) {
+       $.LoadingOverlay("show");
+       auth.createUserWithEmailAndPassword(email, pwd)
+           .then(({ user }) =>{
+               console.warn(user);
+               console.warn("UID register "+user.uid);
+
+               document.getElementsByTagName("form")[0].reset();
+               Swal.fire("Success", "Registrasi "+user.email+" success ", "success")
+           })
+           .catch(({ message })=>{
+               Swal.fire("error", message, "error")
+           })
+           .finally(()=>{
+               console.log("Reg done")
+               $.LoadingOverlay("hide");
+           })
+   })
+</script>
+</body>
+</html>
