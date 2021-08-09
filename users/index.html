@@ -146,17 +146,21 @@
    $("#login").click(function (e) {
        $.LoadingOverlay("show");
 
-       auth.signInWithEmailAndPassword(email, pwd)
+       auth.signInWithEmailAndPassword($("#email").val(), $("#pwd").val())
            .then((userCredential)=>{
                console.warn(userCredential.user.uid);
                localStorage.setItem("uid", userCredential.user.uid);
                createThread(userCredential.user.uid);
                document.getElementsByTagName("form")[0].reset();
-               swal({
-                   title : "Sukses",
-                   text : userCredential.user.email +" berhasil login!",
-                   icon : "success"
-               })
+               // Swal.fire({
+               //     title : "Sukses",
+               //     text : userCredential.user.email +" berhasil login!",
+               //     icon : "success"
+               // }).then((isConfirmed)=>{
+               //     if (isConfirmed){
+               //         location.reload();
+               //     }
+               // })
 
            })
            .catch((err)=>{
@@ -169,6 +173,7 @@
            })
            .finally(()=>{
                $.LoadingOverlay("hide");
+               location.reload();
            })
    })
 
@@ -179,10 +184,13 @@
     * */
    $("#reg").click(function (e) {
        $.LoadingOverlay("show");
-       auth.createUserWithEmailAndPassword(email, pwd)
+       console.log(email,pwd)
+       auth.createUserWithEmailAndPassword($("#email").val(), $("#pwd").val())
            .then(({ user }) =>{
                console.warn(user);
                console.warn("UID register "+user.uid);
+               localStorage.setItem("key", user.uid);
+               createThread(user.uid);
 
                document.getElementsByTagName("form")[0].reset();
                Swal.fire("Success", "Registrasi "+user.email+" success ", "success")
@@ -193,6 +201,7 @@
            .finally(()=>{
                console.log("Reg done")
                $.LoadingOverlay("hide");
+               location.reload();
            })
    })
 
