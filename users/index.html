@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-database.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <body>
 <div class="container mt-5">
@@ -47,7 +48,7 @@
 
                     <button type="button" id="logout" class="btn btn-block btn-danger" hidden>Logout</button>
                     <hr>
-                    <table class="table table-hover table-striped">
+                    <table class="table table-hover table-striped table-sm">
                         <tr>
                             <td>Email</td>
                             <td>:</td>
@@ -59,14 +60,14 @@
                             <td><span id="lsThread"></span></td>
                         </tr>
                         <tr>
-                            <td>Start Time</td>
+                            <td>Time</td>
                             <td>:</td>
                             <td><span id="lsTime"></span></td>
                         </tr>
                         <tr>
-                            <td>IP Address</td>
+                            <td>Referrer</td>
                             <td>:</td>
-                            <td><span id="lsIp"></span></td>
+                            <td><span id="lsIp" class="text-truncate"></span></td>
                         </tr>
                     </table>
                 </div>
@@ -75,6 +76,9 @@
         </div>
         <div class="col-sm-8">
             <div class="card">
+                <div class="card-header">
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#myModal">New Message</button>
+                </div>
                 <div class="card-body">
                     <table class="table table-hover" id="tb-list">
                         <thead>
@@ -90,6 +94,32 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!--modal add new message-->
+    <!-- The Modal -->
+    <div class="modal fade" id="myModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Modal Heading</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <form id="newMessage">
+                        <div class="form-group">
+                            <textarea name="message" id="" class="form-control"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
@@ -120,7 +150,9 @@
 
        auth.signInWithEmailAndPassword(email, pwd)
            .then((userCredential)=>{
-               console.warn(userCredential);
+               console.warn(userCredential.user.uid);
+               localStorage.setItem("uid", userCredential.user.uid);
+               createThread(userCredential.user.uid);
                document.getElementsByTagName("form")[0].reset();
                swal({
                    title : "Sukses",
@@ -174,13 +206,14 @@
    auth.onAuthStateChanged((user)=>{
        if(user){
            console.warn("login", user.uid);
+           // localStorage.setItem()
            user.providerData.forEach(function (profile) {
                $("#lsMail").html(profile.email);
-               console.log("  Sign-in provider: " + profile.providerId);
+               // console.log("  Sign-in provider: " + profile.providerId);
                console.log("  Provider-specific UID: " + profile.uid);
-               console.log("  Name: " + profile.displayName);
+               // console.log("  Name: " + profile.displayName);
                console.log("  Email: " + profile.email);
-               console.log("  Photo URL: " + profile.photoURL);
+               // console.log("  Photo URL: " + profile.photoURL);
            });
 
            $("#reg").attr("hidden","");
@@ -193,7 +226,7 @@
            console.warn("logout");
 
            $("#reg").removeAttr("hidden");
-           $("login").removeAttr("hidden");
+           $("#login").removeAttr("hidden");
            $("#logout").attr("hidden","");
 
            rowList.attr("hidden","");
@@ -216,6 +249,7 @@
             showCancelButton : true,
         }).then(({isConfirmed})=>{
             if(isConfirmed){
+                localStorage.removeItem("uid");
                 $.LoadingOverlay("show");
                 auth.signOut()
                     .then(()=>{
@@ -230,6 +264,63 @@
                     })
             }
         })
+    })
+
+    /**
+     * -----------------------------------------------------------------
+     * for create thread
+     * -----------------------------------------------------------------
+     * */
+    function createThread(uid) {
+        let id = db.ref("threads/"+uid).push({
+            threadid: rand = "_" + Math.random().toString(36).substr(2, 9),
+            started: Math.round(Date.now()/1000),
+            referrer: window.location.origin
+        }).key;
+        console.log("thread has been created. "+id);
+    }
+
+    let uid = localStorage.getItem("uid");
+    if (uid !== null){
+        db.ref("threads/"+uid).on("value", function (e) {
+            let item = e.val();
+
+            console.log("asd", item)
+            for (var i in item){
+                console.log("i", item[i].referrer)
+                $("#lsIp").html(item[i].referrer);
+                $("#lsThread").html(item[i].threadid);
+                $("#lsTime").html(item[i].started);
+            }
+        })
+    }
+
+    /**
+     * -----------------------------------------------------------------
+     * add new messages
+     * -----------------------------------------------------------------
+     * */
+    $("form#newMessage").submit(function (e) {
+        e.preventDefault();
+        try{
+            db.ref("messages/"+uid).push({
+                message : $("[name=message]").val(),
+                time : Math.round(Date.now()/1000),
+                status : "pending"
+            })
+            swal({
+                title : "Succcess",
+                text : "Message has been send.",
+                icon : "success"
+            })
+            $("#myModal").modal("hide");
+        }catch (e) {
+            swal({
+                title : "error",
+                text : e.message,
+                icon : "error"
+            })
+        }
     })
 </script>
 </body>
