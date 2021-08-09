@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="../assets/bootstrap.min.css">
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-auth.js"></script>
-<!--    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-analytics.js"></script>-->
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-database.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
@@ -38,12 +37,37 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
 <script src="../config-firebase.js"></script>
+
 <script>
    let email = $("#email").val();
    let pwd = $("#pwd").val();
+   const swal = (opt) => Swal.fire(opt);
 
    $("#login").click(function (e) {
-       console.log(email, pwd)
+       $.LoadingOverlay("show");
+
+       auth.signInWithEmailAndPassword(email, pwd)
+           .then((userCredential)=>{
+               console.warn(userCredential);
+               document.getElementsByTagName("form")[0].reset();
+               swal({
+                   title : "Sukses",
+                   text : userCredential.user.email +" berhasil login!",
+                   icon : "success"
+               })
+
+           })
+           .catch((err)=>{
+               console.warn(err);
+               swal({
+                   title : "error",
+                   text : err.message,
+                   icon : "error"
+               })
+           })
+           .finally(()=>{
+               $.LoadingOverlay("hide");
+           })
    })
    
    $("#reg").click(function (e) {
