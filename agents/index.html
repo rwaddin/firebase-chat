@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent</title>
+    <link rel="stylesheet" href="../assets/bootstrap.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-database.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-sm-4 offset-4">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <form action="">
+                            <div class="form-group">
+                                <input type="email" class="form-control" placeholder="Enter email" id="email">
+                                <small class="text-muted">Email default is <code>agent@rw.com</code></small>
+                            </div>
+                            <div class="form-group">
+                                <input type="password" class="form-control" placeholder="Enter password" id="pwd">
+                                <small class="text-muted">Password default is <code>agents</code></small>
+                            </div>
+                            <div class="form-group">
+                                <select name="dept" id="" class="form-control">
+                                    <Option value="Sales">Sales</Option>
+                                    <Option value="Billing">Billing</Option>
+                                    <Option value="Technical Support">Technical Support</Option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
+    <script src="../config-firebase.js"></script>
+    <script>
+        /**
+         * -----------------------------------------------------------------
+         * login agents
+         * -----------------------------------------------------------------
+         * */
+        $("form").submit(function (e) {
+            e.preventDefault();
+            $.LoadingOverlay("show");
+
+            auth.signInWithEmailAndPassword($("#email").val(), $("#pwd").val())
+                .then((userCredential)=>{
+                    console.warn(userCredential.user.uid);
+                    localStorage.setItem("uid-agent", userCredential.user.uid);
+                    create_account(userCredential.user.uid, userCredential.user.email);
+                    document.getElementsByTagName("form")[0].reset();
+                    // location.reload(); // for trigger update localstorage
+                })
+                .catch((err)=>{
+                    console.warn(err);
+                    Swal.fire({
+                        title : "error",
+                        text : err.message,
+                        icon : "error"
+                    })
+                })
+                .finally(()=>{
+                    $.LoadingOverlay("hide");
+                })
+        })
+
+        /**
+         * -----------------------------------------------------------------
+         * this is for create account under /agents in realtime database
+         * not for account authentication.
+         * please direct add account authentication or you can add feature
+         * add agent in this page, same with page client.
+         * -----------------------------------------------------------------
+         * */
+        function create_account(uid, email){
+            try{
+                let agent = db.ref("agents/"+uid).push({
+                    uid: uid,
+                    ref: window.location.origin,
+                    mail:email,
+                    dept: $("[name=dept]").val()
+                }).key;
+
+                console.log("Agent has been created "+agent);
+            }catch (e) {
+                console.error("Create agent failed "+ e.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -152,16 +152,8 @@
                localStorage.setItem("uid", userCredential.user.uid);
                createThread(userCredential.user.uid);
                document.getElementsByTagName("form")[0].reset();
-               // Swal.fire({
-               //     title : "Sukses",
-               //     text : userCredential.user.email +" berhasil login!",
-               //     icon : "success"
-               // }).then((isConfirmed)=>{
-               //     if (isConfirmed){
-               //         location.reload();
-               //     }
-               // })
 
+               location.reload();
            })
            .catch((err)=>{
                console.warn(err);
@@ -173,7 +165,6 @@
            })
            .finally(()=>{
                $.LoadingOverlay("hide");
-               location.reload();
            })
    })
 
