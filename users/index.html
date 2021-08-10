@@ -270,12 +270,12 @@
      * -----------------------------------------------------------------
      * */
     function createThread(uid) {
-        let id = db.ref("threads/"+uid).push({
+        let id = db.ref("threads/"+uid).set({
             threadid: rand = "_" + Math.random().toString(36).substr(2, 9),
             started: Math.round(Date.now()/1000),
             referrer: window.location.origin
-        }).key;
-        console.log("thread has been created. "+id);
+        });
+        // console.log("thread has been created. "+id);
     }
 
     /**
@@ -287,14 +287,10 @@
     if (uid !== null){
         db.ref("threads/"+uid).on("value", function (e) {
             let item = e.val();
-
-            console.log("asd", item)
-            for (var i in item){
-                console.log("i", item[i].referrer)
-                $("#lsIp").html(item[i].referrer);
-                $("#lsThread").html(item[i].threadid);
-                $("#lsTime").html(item[i].started);
-            }
+            $("#lsIp").html(item.referrer);
+            $("#lsThread").html(item.threadid);
+            $("#lsTime").html(item.started);
+            console.log("e",e.val());
         })
 
         db.ref("messages/"+uid).on("value", function (e) {

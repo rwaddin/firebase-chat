@@ -4,20 +4,22 @@
     <meta charset="UTF-8">
     <title>Agent</title>
     <link rel="stylesheet" href="../assets/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
 
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.9/firebase-database.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <body>
     <div class="container mt-5">
-        <div class="row">
+        <div class="row" id="row-login">
             <div class="col-sm-4 offset-4">
                 <div class="card shadow">
                     <div class="card-body">
-                        <form action="">
+                        <form id="login">
                             <div class="form-group">
                                 <input type="email" class="form-control" placeholder="Enter email" id="email">
                                 <small class="text-muted">Email default is <code>agent@rw.com</code></small>
@@ -39,6 +41,64 @@
                 </div>
             </div>
         </div>
+
+        <div class="row" id="row-thread" style="display: none">
+            <div class="col-sm-4">
+                <div class="card">
+                    <div class="card-header">
+                        <button id="logout" class="btn btn-warning">Logout</button>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <div class="card">
+                    <div class="card-header">List Messages <button data-toggle="modal" data-target="#myModal" class="btn btn-info">Balas</button></div>
+                    <div class="card-body">
+                        <table class="table table-striped table-hover" id="tb-msg">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Message</th>
+                                    <th>Aktor</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Modal -->
+    <div class="modal fade" id="myModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h4 class="modal-title">Modal Heading</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modal-body">
+                    <form id="reply">
+                        <input type="hidden" name="uid">
+                        <div class="form-group">
+                            <textarea name="message" class="form-control"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
     </div>
 
 
@@ -46,12 +106,13 @@
     <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
     <script src="../config-firebase.js"></script>
     <script>
+        $.LoadingOverlay("show");
         /**
          * -----------------------------------------------------------------
          * login agents
          * -----------------------------------------------------------------
          * */
-        $("form").submit(function (e) {
+        $("form#login").submit(function (e) {
             e.preventDefault();
             $.LoadingOverlay("show");
 
@@ -61,7 +122,7 @@
                     localStorage.setItem("uid-agent", userCredential.user.uid);
                     create_account(userCredential.user.uid, userCredential.user.email);
                     document.getElementsByTagName("form")[0].reset();
-                    // location.reload(); // for trigger update localstorage
+                    location.reload(); // for trigger update localstorage
                 })
                 .catch((err)=>{
                     console.warn(err);
@@ -86,7 +147,7 @@
          * */
         function create_account(uid, email){
             try{
-                let agent = db.ref("agents/"+uid).push({
+                let agent = db.ref("agents/"+uid).set({
                     uid: uid,
                     ref: window.location.origin,
                     mail:email,
@@ -98,6 +159,115 @@
                 console.error("Create agent failed "+ e.message);
             }
         }
+
+        /**
+         * -----------------------------------------------------------------
+         * for listen change user-authentication
+         * -----------------------------------------------------------------
+         * */
+        auth.onAuthStateChanged((agent)=> {
+            let rowLogin = $("#row-login");
+            let rowThread = $("#row-thread");
+            if (agent){
+                // login
+                rowLogin.hide();
+                rowThread.show();
+            }else{
+                // logout
+                rowLogin.show();
+                rowThread.hide();
+            }
+            $.LoadingOverlay("hide");
+        })
+
+        /**
+         * -----------------------------------------------------------------
+         * logout authentication
+         * -----------------------------------------------------------------
+         * */
+        $("#logout").click(function () {
+            Swal.fire({
+                title : "Warning",
+                text : "Are you sure want to logout from this app ?",
+                icon : "warning",
+                showCancelButton : true,
+            }).then(({isConfirmed})=>{
+                if(isConfirmed){
+                    localStorage.removeItem("uid-agent");
+                    $.LoadingOverlay("show");
+                    auth.signOut()
+                        .then(()=>{
+                            Swal.fire("success", "Logout berhasil", "success");
+                        })
+                        .catch((err)=>{
+                            console.warn(err);
+                            Swal.fire("error", "Logout gagal", "error");
+                        })
+                        .finally(()=>{
+                            $.LoadingOverlay("hide");
+                        })
+                }
+            })
+        })
+
+        /**
+         * -----------------------------------------------------------------
+         * listen thread, message, agents
+         * -----------------------------------------------------------------
+         * */
+        let uid = localStorage.getItem("uid-agent");
+        if (uid !== null){
+            console.log("ada uid-agent "+uid)
+            db.ref("agents/"+uid).on("value", (e) => {
+                let item = e.val();
+                console.log("agents", item);
+            })
+
+            db.ref("threads").on("value", (e) => {
+
+                let list = "";
+                e.forEach(function (threads) {
+                    console.log("xx",threads.key);
+                    console.log("value",threads.val());
+                    let data = threads.val();
+                    list += `<a href="#" onclick="getMessage('${threads.key}')" class="list-group-item list-group-item-action">${data.threadid}</a>`
+                    // list += `<li class="list-group-item"></li>`
+                })
+                $(".list-group").html(list);
+            })
+
+        }
+
+        function getMessage(uid) {
+            // localStorage.setItem("uid-client", uid);
+            $("[name=uid]").val(uid);
+            db.ref("messages/"+uid).once("value", (e) => {
+                // let item = e.val();
+                console.log("messages "+uid, e.val());
+                let tr = "";
+                e.forEach((dt) => {
+                    let item = dt.val();
+                    tr += "<tr>";
+                    tr += `<td>${item.time}</td><td>${item.message}</td><td>${item.aktor}</td>`;
+                    tr += "</tr>";
+                })
+                $("#tb-msg").find("tbody").html(tr);
+                $("#tb-msg").DataTable();
+            })
+        }
+
+        $("form#reply").submit(function (e) {
+            e.preventDefault();
+            let uid = $("[name=uid]").val();
+            db.ref("messages/"+uid).push({
+                message : $("[name=message]").val(),
+                time : Math.round(Date.now()/1000),
+                status : "pending",
+                aktor: "agent"
+            })
+
+            $("#myModal").modal("hide");
+        })
     </script>
 </body>
 </html>
